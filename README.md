@@ -45,3 +45,6 @@ With:
 
 - when a _Mixed_ datasource is used, allow differentiating metrics from different sources (same label for now)
 - use `pyenergyplus` Python bindings to start EnergyPlus simulation and plot live
+- add support for remote sources (http, s3, ...)
+- cache large data frames on disk rather than memory
+- add support for annotations
