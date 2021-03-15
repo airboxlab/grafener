@@ -1,4 +1,4 @@
 #!/bin/bash
 
-python3 /usr/local/grafener/backend.py &
+cd /usr/local/grafener && python3 ./grafener/backend.py &
 /run.sh
