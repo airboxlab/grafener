@@ -168,9 +168,8 @@ def get_data(source: str,
 
     # process each target and transform to requested response type
     if response_type == "timeserie":
-        return [_to_time_series_response(target_definition["target"], df)
-                for target_definition in targets]
-    if response_type == "table":
+        return [_to_time_series_response(target_definition["target"], df) for target_definition in targets]
+    elif response_type == "table":
         return [_to_table_response([t["target"] for t in targets], df)]
     else:
         raise ValueError("unsupported response type {}".format(response_type))
