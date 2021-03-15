@@ -35,5 +35,6 @@ With:
 3. Configure a new Simple JSON DataSource as following:
    1. URL must be `http://localhost:8900`
    2. Add a `source` HTTP header that will point to `eplusout.csv` file. In present example, it will be at `/tmp/eplus_data/eplusout.csv`
-    Example: ![datasource configuration](images/ds_config.png?raw=true "Datasource configuration")
+   <br/>
+   Example: ![datasource configuration](images/ds_config.png?raw=true "Datasource configuration")
 4. Enjoy! Create a new dashboard, add a panel and start browsing EnergyPlus data   
