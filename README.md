@@ -40,3 +40,8 @@ With:
        at `/tmp/eplus_data/eplusout.csv`
 4. Enjoy! Create a new dashboard, add a panel and start browsing EnergyPlus
    data ![transform](images/transform.png?raw=true "Transformation")
+   
+## Roadmap
+
+- when a _Mixed_ datasource is used, allow differentiating metrics from different sources (same label for now)
+- use `pyenergyplus` Python bindings to start EnergyPlus simulation and plot live
