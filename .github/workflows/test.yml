@@ -1,4 +1,4 @@
-name: Lake model
+name: Grafener Tests
 
 on: [push]
 
