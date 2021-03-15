@@ -85,7 +85,7 @@ def _process_energyplus_datetime(strdate: str) -> str:
     :param strdate:
     :return:
     """
-    if '24:00' in strdate:
+    if "24:00" in strdate:
         date = strdate.strip().split(" ")[0]
         new_date = datetime.strptime(date, "%m/%d") + timedelta(days=1)
         return "{:04d}/{:02d}/{:02d}  00:00:00".format(PINNED_SIM_YEAR, new_date.month, new_date.day)
@@ -102,7 +102,7 @@ def _process_csv(df: DataFrame) -> DataFrame:
     # make a nice datetime format out of Date/Time column
     df["Date/Time"] = df["Date/Time"].apply(_process_energyplus_datetime)
     df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y/%m/%d  %H:%M:%S", utc=True)
-    df.index = df['Date/Time']
+    df.index = df["Date/Time"]
     # last column has a trailing space
     df.columns = [c.strip() for c in df.columns]
     return df

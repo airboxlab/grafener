@@ -61,9 +61,9 @@ def query():
     return jsonify(raw_resp)
 
 
-@app.route('/annotations', methods=['POST'])
-@app.route('/tag-keys', methods=['POST'])
-@app.route('/tag-values', methods=['POST'])
+@app.route("/annotations", methods=["POST"])
+@app.route("/tag-keys", methods=["POST"])
+@app.route("/tag-values", methods=["POST"])
 def annotations():
     return Response("not implemented", 404)
 
