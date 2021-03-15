@@ -32,9 +32,7 @@ With:
 
 1. Run an EnergyPlus experiment using CSV output. Example: `energyplus -r -x -d /tmp/energyplus -w /path/to/weather.epw /path/to/model.idf`
 2. Open you browser at http://localhost:3000
-3. Configure a new Simple JSON DataSource as following:
+3. Configure a new Simple JSON DataSource as following: ![datasource configuration](images/ds_config.png?raw=true "Datasource configuration")
    1. URL must be `http://localhost:8900`
    2. Add a `source` HTTP header that will point to `eplusout.csv` file. In present example, it will be at `/tmp/eplus_data/eplusout.csv`
-   <br/>
-   Example: ![datasource configuration](images/ds_config.png?raw=true "Datasource configuration")
 4. Enjoy! Create a new dashboard, add a panel and start browsing EnergyPlus data   
