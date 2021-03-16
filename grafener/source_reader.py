@@ -105,6 +105,8 @@ def _process_csv(df: DataFrame) -> DataFrame:
     df.index = df["Date/Time"]
     # last column has a trailing space
     df.columns = [c.strip() for c in df.columns]
+    # drop NaNs: happens when source contains variables/meters reported at different frequency
+    df = df.dropna()
     return df
 
 

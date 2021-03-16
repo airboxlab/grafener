@@ -1,4 +1,5 @@
 import json
+import math
 import unittest
 
 from grafener import source_reader
@@ -9,6 +10,7 @@ from grafener.source_reader import data_cache
 class TestBackend(unittest.TestCase):
     app = app
     app.testing = True
+    source_reader.PINNED_SIM_YEAR = 2020
 
     def test_no_source(self):
         with app.test_client() as client:
@@ -59,7 +61,6 @@ class TestBackend(unittest.TestCase):
 
     def test_timeseries_query(self):
         with app.test_client() as client:
-            source_reader.PINNED_SIM_YEAR = 2020
             rv = client.post("/query",
                              data=json.dumps({
                                  "range": {
@@ -89,9 +90,38 @@ class TestBackend(unittest.TestCase):
                 self.assertIsInstance(ts, int)
             self.assertEqual("Environment:Site Outdoor Air Drybulb Temperature [C](TimeStep)", json_resp[0]["target"])
 
+    def test_hourly_timeseries_query(self):
+        with app.test_client() as client:
+            rv = client.post("/query",
+                             data=json.dumps({
+                                 "range": {
+                                     "from": "2020-01-01T00:00:00.000Z",
+                                     "to": "2020-02-01T00:00:00.000Z",
+                                 },
+                                 "interval": "30s",
+                                 "intervalMs": 30000,
+                                 "maxDataPoints": 550,
+                                 "targets": [
+                                     {
+                                         "target": "Electricity:Facility [J](Hourly)",
+                                         "refId": "A",
+                                         "type": "timeserie"
+                                     }
+                                 ]
+                             }),
+                             headers={
+                                 "source": "tests/test_eplusout.csv.gz",
+                                 "content-type": "application/json"
+                             })
+            json_resp = json.loads(rv.data)
+            self.assertEqual(1, len(json_resp))
+            datapoints = json_resp[0]["datapoints"]
+            self.assertTrue(len(datapoints) > 0)
+            for datapoint in datapoints:
+                self.assertFalse(math.isnan(datapoint[0]))
+
     def test_table_query(self):
         with app.test_client() as client:
-            source_reader.PINNED_SIM_YEAR = 2020
             rv = client.post("/query",
                              data=json.dumps({
                                  "range": {
