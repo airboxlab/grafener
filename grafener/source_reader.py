@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 from datetime import datetime, timedelta
@@ -50,17 +51,18 @@ class TableResponse:
         }
 
 
-def _to_time_series_response(target: str, df: DataFrame) -> TimeSeriesResponse:
+def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[str]) -> TimeSeriesResponse:
     resp = TimeSeriesResponse()
-    resp.target = target
+    resp.target = prefix_target_xp(target, experiment)
     resp.datapoints = list(zip(df[target].values.tolist(),
                                [int(t.timestamp()) * 1000 for t in df.index.tolist()]))  # noqa
     return resp
 
 
-def _to_table_response(targets: List[str], df: DataFrame) -> TableResponse:
+def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[str]) -> TableResponse:
     resp = TableResponse()
-    resp.columns = [{"text": "Time", "type": "time"}] + [{"text": target, "type": "number"} for target in targets]
+    resp.columns = [{"text": "Time", "type": "time"}] + \
+                   [{"text": prefix_target_xp(target, experiment), "type": "number"} for target in targets]
     resp.rows = [[v[0], *v[1]]
                  for v in list(zip([int(t.timestamp()) * 1000 for t in df.index.tolist()],
                                    df[targets].values.tolist()))]
@@ -133,35 +135,54 @@ def _fetch(source: str) -> DataFrame:
     return _fetch_local(source)
 
 
-def get_metrics(source: str, search: Optional[str]) -> List[str]:
+def prefix_target_xp(c: str, experiment: Optional[str]):
+    return experiment + " -- " + c if experiment else c
+
+
+def get_metrics(source: str,
+                search: Optional[str],
+                experiment: Optional[str] = None) -> List[str]:
     """
     computes Grafana metrics from CSV header columns
 
     :param source:
     :param search: an optional search string passed in request
+    :param experiment: an optional experiment ID passed as path parameter during datasource configuration. Used to
+                       prefix metric names for deduplication when more than 1 datasource is used in a panel
     :return:
     """
-    logging.info("metric search - source: {} target: {}".format(source, search))
+    logging.info("metric search - xp: {} source: {} target: {}".format(experiment, source, search))
     df = _fetch(source)
-    return [c for c in df.columns if c != "Date/Time" and (search or "") in c]
+
+    return [prefix_target_xp(c, experiment)
+            for c in df.columns if c != "Date/Time" and (search or "") in c]
 
 
 def get_data(source: str,
              targets: List[Dict[str, str]],
              response_type: str,
              range_from: str,
-             range_to: str) -> List[Union[TimeSeriesResponse, TableResponse]]:
+             range_to: str,
+             experiment: Optional[str] = None) -> List[Union[TimeSeriesResponse, TableResponse]]:
     """
     implements /query enpoint by querying source DataFrame and returning either a TimeSeriesResponse or a TableResponse
 
     :param source: source file
     :param targets: list of targets
     :param response_type: expected response type, either 'timeserie' or 'table'. Assuming same for all targets
-    :param range_from: iso8601 from date
-    :param range_to: iso8601 to date
+    :param range_from: from date expressed in iso8601
+    :param range_to: to date expressed in iso8601
+    :param experiment: an optional experiment ID passed as path parameter during datasource configuration. When defined,
+                       targets have it as a name prefix
     :return:
     """
     df = _fetch(source)
+
+    # remove experiment ID prefix from targets
+    xp_free_targets = copy.deepcopy(targets)
+    if experiment:
+        for t in xp_free_targets:
+            t["target"] = t["target"].replace(experiment + " -- ", "")
 
     # filter data with specified time range
     range_from_dt = datetime.fromisoformat(range_from.replace("Z", "+00:00"))
@@ -170,8 +191,9 @@ def get_data(source: str,
 
     # process each target and transform to requested response type
     if response_type == "timeserie":
-        return [_to_time_series_response(target_definition["target"], df) for target_definition in targets]
+        return [_to_time_series_response(target_definition["target"], df, experiment)
+                for target_definition in xp_free_targets]
     elif response_type == "table":
-        return [_to_table_response([t["target"] for t in targets], df)]
+        return [_to_table_response([t["target"] for t in xp_free_targets], df, experiment)]
     else:
         raise ValueError("unsupported response type {}".format(response_type))

@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Optional
 
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
@@ -36,28 +37,32 @@ def _check_source():
 
 
 @app.route("/", methods=["GET"])
-def health_check():
+@app.route("/<xp>", methods=["GET"])
+def health_check(xp: Optional[str] = None):
     _check_source()
     return jsonify({"status": "ok"})
 
 
 @app.route("/search", methods=["POST"])
-def search():
+@app.route("/<xp>/search", methods=["POST"])
+def search(xp: Optional[str] = None):
     source = _check_source()
     searched_target = request.json if request.json else {}
-    metrics = get_metrics(source=source, search=searched_target.get("target", None))
+    metrics = get_metrics(source=source, search=searched_target.get("target", None), experiment=xp)
     return jsonify(metrics)
 
 
 @app.route("/query", methods=["POST"])
-def query():
+@app.route("/<xp>/query", methods=["POST"])
+def query(xp: Optional[str] = None):
     source = _check_source()
     req = request.get_json()
     raw_resp = [t.serialize() for t in get_data(source=source,
                                                 targets=req["targets"],
                                                 response_type=req["targets"][0]["type"],
                                                 range_from=req["range"]["from"],
-                                                range_to=req["range"]["to"])]
+                                                range_to=req["range"]["to"],
+                                                experiment=xp)]
     return jsonify(raw_resp)
 
 

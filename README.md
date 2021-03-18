@@ -1,4 +1,4 @@
-# Grafener
+# GrafEner
 
 Plotting EnergyPlus data made easy
 
@@ -30,20 +30,60 @@ With:
 
 ## Use
 
-1. Run an EnergyPlus experiment using CSV output.
-   Example: `energyplus -r -x -d /tmp/energyplus -w /path/to/weather.epw /path/to/model.idf`
-2. Open your browser at http://localhost:3000
-3. Configure a new Simple JSON DataSource as
-   following: ![datasource configuration](images/ds_config.png?raw=true "Datasource configuration")
-    1. URL must be `http://localhost:8900`
-    2. Add a `source` HTTP header that will point to `eplusout.csv` file. In present example, it will be
-       at `/tmp/eplus_data/eplusout.csv`
-4. Enjoy! Create a new dashboard, add a panel and start browsing EnergyPlus
-   data ![transform](images/transform.png?raw=true "Transformation")
-   
+### Basic usage
+
+**Run an EnergyPlus experiment using CSV output.**
+
+Example: 
+
+```shell
+energyplus -r -x -d /tmp/energyplus -w /path/to/weather.epw /path/to/model.idf`
+```
+
+**Open your browser at http://localhost:3000**
+
+**Configure a new Simple JSON DataSource**
+
+Example: ![datasource configuration](images/ds_config.png?raw=true "Datasource configuration")
+
+Notes:
+- URL must be `http://localhost:8900`
+- Add a `source` HTTP header that will point to `eplusout.csv` file. In present example, it will be at 
+  `/tmp/eplus_data/eplusout.csv`
+
+**Enjoy!**
+
+Create a new dashboard, add a panel and start browsing EnergyPlus data. All CSV columns are now Grafana metrics 
+
+![transform](images/transform.png?raw=true "Transformation")
+
+### Using multiple sources
+
+It can be useful to compare results of different EnergyPlus simulations. To visualize more than one simulation output:
+
+**Configure more than 1 datasource**
+
+Using a friendly but unique identifer in URL path. For instance, if you have 2 sources:
+
+- Datasource 1 URL: `http://localhost:8900/myXp1`
+- Datasource 2 URL: `http://localhost:8900/myXp2`
+
+**Use -- Mixed -- datasource type**
+
+In a new panel, use the *-- Mixed --* datasource type, then start adding metrics: Grafana will ask you to provide the 
+datasource first, so you can choose between myXp1 and myXp2
+
+**Visualize and compare**
+
+In this mode, metric names have their respective datasource name as a prefix. It allows to identify them, and apply 
+post-processing (like _series overriding_)
+
+Example:
+
+![mixed](images/mixed.png?raw=true "Mixed DS")
+
 ## Roadmap
 
-- when a _Mixed_ datasource is used, allow differentiating metrics from different sources (same label for now)
 - add a `docker-compose.yml` and datasource provisioning examples
 - add support for remote sources (http, s3, ...)
 - cache large data frames on disk rather than memory
