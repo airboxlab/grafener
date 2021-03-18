@@ -53,7 +53,7 @@ class TableResponse:
 
 def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[str]) -> TimeSeriesResponse:
     resp = TimeSeriesResponse()
-    resp.target = prefix_target_xp(target, experiment)
+    resp.target = _prefix_target_xp(target, experiment)
     resp.datapoints = list(zip(df[target].values.tolist(),
                                [int(t.timestamp()) * 1000 for t in df.index.tolist()]))  # noqa
     return resp
@@ -62,7 +62,7 @@ def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[st
 def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[str]) -> TableResponse:
     resp = TableResponse()
     resp.columns = [{"text": "Time", "type": "time"}] + \
-                   [{"text": prefix_target_xp(target, experiment), "type": "number"} for target in targets]
+                   [{"text": _prefix_target_xp(target, experiment), "type": "number"} for target in targets]
     resp.rows = [[v[0], *v[1]]
                  for v in list(zip([int(t.timestamp()) * 1000 for t in df.index.tolist()],
                                    df[targets].values.tolist()))]
@@ -135,7 +135,14 @@ def _fetch(source: str) -> DataFrame:
     return _fetch_local(source)
 
 
-def prefix_target_xp(c: str, experiment: Optional[str]):
+def _prefix_target_xp(c: str, experiment: Optional[str]) -> str:
+    """
+    if experiment is provided, add it as a prefix to given name
+
+    :param c:
+    :param experiment:
+    :return:
+    """
     return experiment + " -- " + c if experiment else c
 
 
@@ -154,7 +161,7 @@ def get_metrics(source: str,
     logging.info("metric search - xp: {} source: {} target: {}".format(experiment, source, search))
     df = _fetch(source)
 
-    return [prefix_target_xp(c, experiment)
+    return [_prefix_target_xp(c, experiment)
             for c in df.columns if c != "Date/Time" and (search or "") in c]
 
 
