@@ -44,7 +44,8 @@ With:
 ## Roadmap
 
 - when a _Mixed_ datasource is used, allow differentiating metrics from different sources (same label for now)
-- use `pyenergyplus` Python bindings to start EnergyPlus simulation and plot live
+- add a `docker-compose.yml` and datasource provisioning examples
 - add support for remote sources (http, s3, ...)
 - cache large data frames on disk rather than memory
+- use `pyenergyplus` Python bindings to start EnergyPlus simulation and plot live
 - add support for annotations
