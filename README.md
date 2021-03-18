@@ -37,12 +37,12 @@ With:
 Example: 
 
 ```shell
-energyplus -r -x -d /tmp/energyplus -w /path/to/weather.epw /path/to/model.idf`
+energyplus -r -x -d /tmp/energyplus -w /path/to/weather.epw /path/to/model.idf
 ```
 
-**Open your browser at http://localhost:3000**
-
 **Configure a new Simple JSON DataSource**
+
+Open your browser at http://localhost:3000 to configure your first datasource (note: default user is `admin`, same for password).
 
 Example: ![datasource configuration](images/ds_config.png?raw=true "Datasource configuration")
 
