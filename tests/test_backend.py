@@ -50,6 +50,18 @@ class TestBackend(unittest.TestCase):
             for m in json_resp:
                 self.assertIn("FLOOR 4 CORE", m)
 
+    def test_get_metrics_with_xp(self):
+        with app.test_client() as client:
+            rv = client.post("/xp1/search",
+                             data=json.dumps({"target": "FLOOR 4 CORE"}),
+                             headers={
+                                 "source": "tests/test_eplusout.csv.gz",
+                                 "content-type": "application/json"
+                             })
+            json_resp = json.loads(rv.data)
+            for m in json_resp:
+                self.assertIn("xp1 -- FLOOR 4 CORE", m)
+
     def test_data_cache(self):
         with app.test_client() as client:
             self.assertEqual(0, len(data_cache))
@@ -89,6 +101,33 @@ class TestBackend(unittest.TestCase):
                 self.assertIsInstance(value, float)
                 self.assertIsInstance(ts, int)
             self.assertEqual("Environment:Site Outdoor Air Drybulb Temperature [C](TimeStep)", json_resp[0]["target"])
+
+    def test_timeseries_query_with_xp(self):
+        with app.test_client() as client:
+            rv = client.post("/myXp/query",
+                             data=json.dumps({
+                                 "range": {
+                                     "from": "2020-01-01T00:00:00.000Z",
+                                     "to": "2020-02-01T00:00:00.000Z",
+                                 },
+                                 "interval": "30s",
+                                 "intervalMs": 30000,
+                                 "maxDataPoints": 550,
+                                 "targets": [
+                                     {
+                                         "target":
+                                             "myXp -- Environment:Site Outdoor Air Drybulb Temperature [C](TimeStep)",
+                                         "refId": "A",
+                                         "type": "timeserie"
+                                     }
+                                 ]
+                             }),
+                             headers={
+                                 "source": "tests/test_eplusout.csv.gz",
+                                 "content-type": "application/json"
+                             })
+            json_resp = json.loads(rv.data)
+            self.assertEqual("myXp -- Environment:Site Outdoor Air Drybulb Temperature [C](TimeStep)", json_resp[0]["target"])
 
     def test_hourly_timeseries_query(self):
         with app.test_client() as client:
