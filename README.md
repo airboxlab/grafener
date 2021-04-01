@@ -4,13 +4,30 @@ Plotting EnergyPlus data made easy
 
 ## Setup
 
+### Using docker
+
 Build docker image:
 
 ```shell
 docker build -t grafener -f docker/Dockerfile .
 ```
 
+### Using docker-compose
+
+Build the image:
+
+```shell
+docker-compose -f ./docker/docker-compose.yml build grafener
+```
+
+Docker compose configuration provided here brings several benefits:
+- GrafEner configuration is persisted (not lost when container is stopped)
+- docker configuration is centralized in a file (see `docker/docker-compose.yml`)  
+- datasources are automatically provisioned (see `docker/provisioning` to configure yours)
+
 ## Run
+
+### Using docker
 
 ```shell
 docker run --rm \
@@ -27,6 +44,12 @@ With:
   output). Default is current year.
 - `-v /tmp/energyplus:/tmp/eplus_data:ro` mounts a directory where EnergyPlus csv output is located (
   typically `eplusout.csv`) with read-only permission. Data will be available inside the container at `/tmp/eplus_data`
+
+### Using docker-compose
+
+```shell
+docker-compose -f ./docker/docker-compose.yml up
+```
 
 ## Use
 
@@ -84,7 +107,6 @@ Example:
 
 ## Roadmap
 
-- add a `docker-compose.yml` and datasource provisioning examples
 - add support for remote sources (http, s3, ...)
 - cache large data frames on disk rather than memory
 - use `pyenergyplus` Python bindings to start EnergyPlus simulation and plot live

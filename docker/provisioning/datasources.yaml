@@ -1,0 +1,29 @@
+# Datasource provisioning file for Grafener
+# 3 things to setup
+# - datasources:name
+# - datasources:url (http://localhost:8900/ExperimentSlug)
+# - secureJsonData:httpHeaderValue1 (path to eplusout.csv, like /tmp/eplus_data/my_experiment/eplusout.csv)
+apiVersion: 1
+
+datasources:
+- name: Experiment 1
+  orgId: 1
+  # <string, required> datasource type. Required
+  type: grafana-simple-json-datasource
+  # <bool> allow users to edit datasources from the UI.
+  editable: true
+  # <bool> mark as default datasource. Max one per org
+  isDefault: true
+  # <string> API url
+  url: http://localhost:8900/myXp1
+  # <string, required> access mode. direct or proxy. Required
+  access: proxy
+  # <map> fields that will be converted to json and stored in json_data
+  jsonData:
+    tlsAuth: false
+    tlsAuthWithCACert: false
+    httpHeaderName1: "source"
+  # <map> json object of data that will be encrypted.
+  secureJsonData:
+    # path to EnergyPlus eplusout.csv
+    httpHeaderValue1: "/tmp/eplus_data/test_eplusout.csv.gz"
