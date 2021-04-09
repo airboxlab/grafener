@@ -7,7 +7,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import abort
 
 from grafener.logging_config import init_logging
-from grafener.source_reader import get_metrics, get_data
+from grafener.request_handler import get_metrics, get_data
 
 init_logging()
 

@@ -1,57 +1,23 @@
 import copy
 import logging
-import os
-from datetime import datetime, timedelta
-from typing import Dict, List, NamedTuple, Optional, Union
+from datetime import datetime
+from typing import Dict, List, Optional, Union
 
-import pandas as pd
 from pandas import DataFrame
 
 from grafener.logging_config import init_logging
+from grafener.source import Source
+from grafener.types import DataFrameCacheValue, TimeSeriesResponse, TableResponse
 
 init_logging()
 
-# EnergyPlus date format doesn't include year by default
-PINNED_SIM_YEAR: int = int(os.getenv("SIM_YEAR", datetime.now().year))
-logging.info("Using pinned simulation year: {}".format(PINNED_SIM_YEAR))
-
-
 # keep a cache for each source. Source data is invalidated if remote source changes
 # (e.g. file timestamp changes in case)
-class _DataFrameCacheValue(NamedTuple):
-    timestamp: int
-    data_frame: DataFrame
-
-
-data_cache: Dict[str, _DataFrameCacheValue] = {}
-
-
-# Response types
-class TimeSeriesResponse:
-    target: str
-    datapoints: List[List[Union[int, float]]]
-
-    def serialize(self):
-        return {
-            "target": self.target,
-            "datapoints": self.datapoints
-        }
-
-
-class TableResponse:
-    type: str = "table"
-    columns: List[Dict[str, str]]
-    rows: List[Union[int, float, str]]
-
-    def serialize(self):
-        return {
-            "type": self.type,
-            "columns": self.columns,
-            "rows": self.rows
-        }
+data_cache: Dict[str, DataFrameCacheValue] = {}
 
 
 def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[str]) -> TimeSeriesResponse:
+    """transforms given DataFrame in expected TimeSeries response format"""
     resp = TimeSeriesResponse()
     resp.target = _prefix_target_xp(target, experiment)
     resp.datapoints = list(zip(df[target].values.tolist(),
@@ -60,6 +26,7 @@ def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[st
 
 
 def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[str]) -> TableResponse:
+    """transforms given DataFrame in expected Table response format"""
     resp = TableResponse()
     resp.columns = [{"text": "Time", "type": "time"}] + \
                    [{"text": _prefix_target_xp(target, experiment), "type": "number"} for target in targets]
@@ -69,80 +36,18 @@ def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[s
     return resp
 
 
-def _local_file_reload_needed(source: str) -> bool:
-    """
-
-    :param source:
-    :return: True if source can't be found in cache, or if associated timestamp is older than file modification time
-    """
-    return source not in data_cache or data_cache[source].timestamp < os.path.getmtime(source)
-
-
-def _process_energyplus_datetime(strdate: str) -> str:
-    """
-    transforms:
-        - EnergyPlus date format '%m/%d %H:%M:%S' to '%Y/%m/%d %H:%M:%S'.
-        - midnight expressed as 24:00 into 00:00
-
-    :param strdate:
-    :return:
-    """
-    if "24:00" in strdate:
-        date = strdate.strip().split(" ")[0]
-        new_date = datetime.strptime(date, "%m/%d") + timedelta(days=1)
-        return "{:04d}/{:02d}/{:02d}  00:00:00".format(PINNED_SIM_YEAR, new_date.month, new_date.day)
-    else:
-        return "{:04d}/{}".format(PINNED_SIM_YEAR, strdate.strip())
-
-
-def _process_csv(df: DataFrame) -> DataFrame:
-    """
-
-    :param df:
-    :return:
-    """
-    # make a nice datetime format out of Date/Time column
-    df["Date/Time"] = df["Date/Time"].apply(_process_energyplus_datetime)
-    df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y/%m/%d  %H:%M:%S", utc=True)
-    df.index = df["Date/Time"]
-    # last column has a trailing space
-    df.columns = [c.strip() for c in df.columns]
-    # drop NaNs: happens when source contains variables/meters reported at different frequency
-    df = df.dropna()
-    return df
-
-
-def _fetch_local(source: str) -> DataFrame:
-    """
-    load data from local file system (uses cache)
-
-    :param source:
-    :return:
-    """
-    if _local_file_reload_needed(source):
-        csv_data = _process_csv(pd.read_csv(source))
-        data_cache[source] = _DataFrameCacheValue(int(datetime.now().timestamp()), csv_data)
+def _fetch(source: str) -> DataFrame:
+    """calls appropriate fetcher, based on source type"""
+    src = Source.of(source)
+    refresh_needed = source not in data_cache or data_cache[source].timestamp < src.source_timestamp()
+    if refresh_needed:
+        csv_data = src.read_source()
+        data_cache[source] = DataFrameCacheValue(int(datetime.now().timestamp()), csv_data)
     return data_cache[source].data_frame
 
 
-def _fetch(source: str) -> DataFrame:
-    """
-    calls appropriate fetcher, based on source type. For now only local file systems is supported
-
-    :param source:
-    :return:
-    """
-    return _fetch_local(source)
-
-
 def _prefix_target_xp(c: str, experiment: Optional[str]) -> str:
-    """
-    if experiment is provided, add it as a prefix to given name
-
-    :param c:
-    :param experiment:
-    :return:
-    """
+    """if experiment is provided, add it as a prefix to given name"""
     return experiment + " -- " + c if experiment else c
 
 
@@ -156,7 +61,7 @@ def get_metrics(source: str,
     :param search: an optional search string passed in request
     :param experiment: an optional experiment ID passed as path parameter during datasource configuration. Used to
                        prefix metric names for deduplication when more than 1 datasource is used in a panel
-    :return:
+    :return: list of queryable metrics
     """
     logging.info("metric search - xp: {} source: {} target: {}".format(experiment, source, search))
     df = _fetch(source)
