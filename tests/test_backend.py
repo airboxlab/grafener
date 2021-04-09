@@ -1,10 +1,21 @@
 import json
 import math
 import unittest
+from unittest import skipUnless
 
 from grafener import energyplus
 from grafener.backend import app
 from grafener.request_handler import data_cache
+
+
+def _aws_creds_available():
+    import boto3
+    sts = boto3.client('sts')
+    try:
+        sts.get_caller_identity()
+        return True
+    except Exception:
+        return False
 
 
 class TestBackend(unittest.TestCase):
@@ -197,6 +208,7 @@ class TestBackend(unittest.TestCase):
             self.assertTrue(len(data["rows"]) > 0)
             self.assertEqual(3, len(data["rows"][0]))
 
+    @skipUnless(_aws_creds_available(), "AWS creds not available")
     def test_s3_source(self):
         with app.test_client() as client:
             rv = client.post("/search", headers={"source": "s3://foobot-public-images/grafener/test_eplusout.csv.gz"})
@@ -204,4 +216,3 @@ class TestBackend(unittest.TestCase):
             self.assertTrue(isinstance(json_resp, list))
             self.assertNotIn("Date/Time", json_resp)
             self.assertIn("Environment:Site Outdoor Air Drybulb Temperature [C](TimeStep)", json_resp)
-
