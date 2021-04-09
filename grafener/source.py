@@ -1,3 +1,4 @@
+import logging
 import os
 import tempfile
 from abc import ABC, abstractmethod
@@ -8,6 +9,12 @@ import pandas as pd
 from pandas import DataFrame
 
 from grafener.energyplus import process_csv
+
+# make boto3 less verbose
+logging.getLogger("boto3").setLevel(logging.ERROR)
+logging.getLogger("botocore").setLevel(logging.ERROR)
+logging.getLogger("s3transfer").setLevel(logging.ERROR)
+logging.getLogger("urllib3").setLevel(logging.ERROR)
 
 
 class Source(ABC):
@@ -72,7 +79,6 @@ class S3Source(Source):
         parsed = urlparse(source_path)
         self.bucket = parsed.netloc
         self.key = parsed.path[1:]
-        print(self.bucket, self.key)
 
     def source_timestamp(self) -> int:
         object_summary = self.s3.ObjectSummary(self.bucket, self.key)
