@@ -105,9 +105,17 @@ Example:
 
 ![mixed](images/mixed.png?raw=true "Mixed DS")
 
+### Working with S3
+
+`source` HTTP header can point to a S3 object identified by its URI. Example: `s3://my-bucket/path/to/eplusout.csv[.gz]`
+
+To access your bucket content, make sure that either:
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_DEFAULT_REGION` environment variables are set
+- or this process is running on an AWS EC2/ECS instance with appropriate S3 permissions (e.g. IAM instance role)
+
 ## Roadmap
 
-- add support for remote sources (http, s3, ...)
+- add support for more remote sources (http, ...)
 - cache large data frames on disk rather than memory
 - use `pyenergyplus` Python bindings to start EnergyPlus simulation and plot live
 - add support for annotations
