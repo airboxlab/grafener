@@ -1,4 +1,5 @@
 import os
+import tempfile
 from abc import ABC, abstractmethod
 from urllib.parse import urlparse
 
@@ -70,12 +71,14 @@ class S3Source(Source):
         self.s3 = boto3.resource("s3")
         parsed = urlparse(source_path)
         self.bucket = parsed.netloc
-        self.key = parsed.path
+        self.key = parsed.path[1:]
+        print(self.bucket, self.key)
 
     def source_timestamp(self) -> int:
         object_summary = self.s3.ObjectSummary(self.bucket, self.key)
         return object_summary.last_modified
 
     def load(self) -> str:
-        obj = self.s3.Object(self.bucket, self.key)
-        return obj.get()["Body"].read().decode("utf-8")
+        tmp_path = os.path.join(tempfile.gettempdir(), self.key.replace("/", "_"))
+        self.s3.Bucket(self.bucket).download_file(self.key, tmp_path)
+        return tmp_path

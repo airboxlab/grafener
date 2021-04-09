@@ -196,3 +196,12 @@ class TestBackend(unittest.TestCase):
             ], data["columns"])
             self.assertTrue(len(data["rows"]) > 0)
             self.assertEqual(3, len(data["rows"][0]))
+
+    def test_s3_source(self):
+        with app.test_client() as client:
+            rv = client.post("/search", headers={"source": "s3://foobot-public-images/grafener/test_eplusout.csv.gz"})
+            json_resp = json.loads(rv.data)
+            self.assertTrue(isinstance(json_resp, list))
+            self.assertNotIn("Date/Time", json_resp)
+            self.assertIn("Environment:Site Outdoor Air Drybulb Temperature [C](TimeStep)", json_resp)
+
