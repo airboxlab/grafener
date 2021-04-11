@@ -1,16 +1,27 @@
 import json
 import math
 import unittest
+from unittest import skipUnless
 
-from grafener import source_reader
+from grafener import energyplus
 from grafener.backend import app
-from grafener.source_reader import data_cache
+from grafener.request_handler import data_cache
+
+
+def _aws_creds_available():
+    import boto3
+    sts = boto3.client('sts')
+    try:
+        sts.get_caller_identity()
+        return True
+    except Exception:
+        return False
 
 
 class TestBackend(unittest.TestCase):
     app = app
     app.testing = True
-    source_reader.PINNED_SIM_YEAR = 2020
+    energyplus.PINNED_SIM_YEAR = 2020
 
     def test_no_source(self):
         with app.test_client() as client:
@@ -65,7 +76,7 @@ class TestBackend(unittest.TestCase):
     def test_data_cache(self):
         with app.test_client() as client:
             self.assertEqual(0, len(data_cache))
-            rv = client.post("/search", headers={"source": "tests/test_eplusout.csv.gz"})
+            client.post("/search", headers={"source": "tests/test_eplusout.csv.gz"})
             self.assertEqual(1, len(data_cache))
             cached_value = list(data_cache.values())[0]
             self.assertTrue(cached_value.timestamp > 0)
@@ -127,7 +138,8 @@ class TestBackend(unittest.TestCase):
                                  "content-type": "application/json"
                              })
             json_resp = json.loads(rv.data)
-            self.assertEqual("myXp -- Environment:Site Outdoor Air Drybulb Temperature [C](TimeStep)", json_resp[0]["target"])
+            self.assertEqual("myXp -- Environment:Site Outdoor Air Drybulb Temperature [C](TimeStep)",
+                             json_resp[0]["target"])
 
     def test_hourly_timeseries_query(self):
         with app.test_client() as client:
@@ -195,3 +207,12 @@ class TestBackend(unittest.TestCase):
             ], data["columns"])
             self.assertTrue(len(data["rows"]) > 0)
             self.assertEqual(3, len(data["rows"][0]))
+
+    @skipUnless(_aws_creds_available(), "AWS creds not available")
+    def test_s3_source(self):
+        with app.test_client() as client:
+            rv = client.post("/search", headers={"source": "s3://foobot-public-images/grafener/test_eplusout.csv.gz"})
+            json_resp = json.loads(rv.data)
+            self.assertTrue(isinstance(json_resp, list))
+            self.assertNotIn("Date/Time", json_resp)
+            self.assertIn("Environment:Site Outdoor Air Drybulb Temperature [C](TimeStep)", json_resp)

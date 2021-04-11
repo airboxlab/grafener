@@ -7,7 +7,7 @@ from flask_cors import CORS
 from werkzeug.exceptions import abort
 
 from grafener.logging_config import init_logging
-from grafener.source_reader import get_metrics, get_data
+from grafener.request_handler import get_metrics, get_data
 
 init_logging()
 
@@ -27,11 +27,9 @@ def _check_source():
         abort(Response("HTTP header 'source' not found", 400))
     if re.match("ĥttp[s]?://", source):
         abort(Response("HTTP source not supported", 400))
-    if source.startswith("s3://"):
-        abort(Response("S3 source not supported", 400))
-
-    if not os.path.exists(source):
-        abort(Response("couldn't find source [{}]".format(source), 400))
+    if not source.startswith("s3://"):
+        if not os.path.exists(source):
+            abort(Response("couldn't find source [{}]".format(source), 400))
 
     return source
 
