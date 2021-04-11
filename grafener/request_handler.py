@@ -18,22 +18,21 @@ data_cache: Dict[str, DataFrameCacheValue] = {}
 
 def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[str]) -> TimeSeriesResponse:
     """transforms given DataFrame in expected TimeSeries response format"""
-    resp = TimeSeriesResponse()
-    resp.target = _prefix_target_xp(target, experiment)
-    resp.datapoints = list(zip(df[target].values.tolist(),
-                               [int(t.timestamp()) * 1000 for t in df.index.tolist()]))  # noqa
-    return resp
+    return TimeSeriesResponse(
+        target=_prefix_target_xp(target, experiment),
+        datapoints=list(zip(df[target].values.tolist(), [int(t.timestamp()) * 1000 for t in df.index.tolist()])) # noqa
+    )
 
 
 def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[str]) -> TableResponse:
     """transforms given DataFrame in expected Table response format"""
-    resp = TableResponse()
-    resp.columns = [{"text": "Time", "type": "time"}] + \
-                   [{"text": _prefix_target_xp(target, experiment), "type": "number"} for target in targets]
-    resp.rows = [[v[0], *v[1]]
-                 for v in list(zip([int(t.timestamp()) * 1000 for t in df.index.tolist()],
-                                   df[targets].values.tolist()))]
-    return resp
+    return TableResponse(
+        columns=[{"text": "Time", "type": "time"}] +
+                [{"text": _prefix_target_xp(target, experiment), "type": "number"} for target in targets],
+        rows=[[v[0], *v[1]]
+              for v in list(zip([int(t.timestamp()) * 1000 for t in df.index.tolist()],
+                                df[targets].values.tolist()))]
+    )
 
 
 def _fetch(source: str) -> DataFrame:

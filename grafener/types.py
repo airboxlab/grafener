@@ -1,5 +1,6 @@
 from typing import NamedTuple, List, Union, Dict
 
+from attr import dataclass
 from pandas import DataFrame
 
 
@@ -9,6 +10,7 @@ class DataFrameCacheValue(NamedTuple):
     data_frame: DataFrame
 
 
+@dataclass(frozen=True)
 class TimeSeriesResponse:
     """Grafana timeseries response"""
     target: str
@@ -21,11 +23,12 @@ class TimeSeriesResponse:
         }
 
 
+@dataclass(frozen=True)
 class TableResponse:
     """Grafana table response"""
-    type: str = "table"
     columns: List[Dict[str, str]]
-    rows: List[Union[int, float, str]]
+    rows: List[List[Union[int, float, str]]]
+    type: str = "table"
 
     def serialize(self):
         return {
