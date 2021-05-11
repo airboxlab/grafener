@@ -73,7 +73,7 @@ def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[s
 def _fetch(source: Source) -> DataFrame:
     """calls appropriate fetcher, based on source type"""
     path = source.source_path
-    refresh_needed = source not in data_cache or data_cache[path].timestamp < source.source_timestamp()
+    refresh_needed = path not in data_cache or data_cache[path].timestamp < source.source_timestamp()
     if refresh_needed:
         csv_data = source.read_source()
         data_cache[path] = DataFrameCacheValue(int(datetime.now().timestamp()), csv_data)

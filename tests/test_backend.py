@@ -3,7 +3,6 @@ import math
 import unittest
 from unittest import skipUnless
 
-from grafener import energyplus
 from grafener.backend import app
 from grafener.request_handler import data_cache
 

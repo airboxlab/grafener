@@ -83,7 +83,7 @@ class S3Source(Source):
 
     def source_timestamp(self) -> int:
         object_summary = self.s3.ObjectSummary(self.bucket, self.key)
-        return object_summary.last_modified
+        return int(object_summary.last_modified.timestamp())
 
     def load(self) -> str:
         tmp_path = os.path.join(tempfile.gettempdir(), self.key.replace("/", "_"))
