@@ -21,7 +21,6 @@ def _aws_creds_available():
 class TestBackend(unittest.TestCase):
     app = app
     app.testing = True
-    energyplus.PINNED_SIM_YEAR = 2020
 
     def test_no_source(self):
         with app.test_client() as client:
@@ -103,6 +102,7 @@ class TestBackend(unittest.TestCase):
                              }),
                              headers={
                                  "source": "tests/test_eplusout.csv.gz",
+                                 "sim_year": "2020",
                                  "content-type": "application/json"
                              })
             json_resp = json.loads(rv.data)
@@ -162,6 +162,7 @@ class TestBackend(unittest.TestCase):
                              }),
                              headers={
                                  "source": "tests/test_eplusout.csv.gz",
+                                 "sim_year": "2020",
                                  "content-type": "application/json"
                              })
             json_resp = json.loads(rv.data)
@@ -195,6 +196,7 @@ class TestBackend(unittest.TestCase):
                              }),
                              headers={
                                  "source": "tests/test_eplusout.csv.gz",
+                                 "sim_year": "2020",
                                  "content-type": "application/json"
                              })
             json_resp = json.loads(rv.data)
