@@ -1,5 +1,7 @@
 # GrafEner
 
+![badge](https://github.com/airboxlab/grafener/actions/workflows/test.yml/badge.svg)
+
 Plotting EnergyPlus data made easy
 
 ## Setup
