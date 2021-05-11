@@ -73,6 +73,8 @@ Notes:
 - URL must be `http://localhost:8900`
 - Add a `source` HTTP header that will point to `eplusout.csv` file. In present example, it will be at 
   `/tmp/eplus_data/eplusout.csv`
+- optionally, you can add a `sim_year` header with the simulation year you want to set for this data source. It will 
+  override `SIM_YEAR` environment variable.
 
 **Enjoy!**
 

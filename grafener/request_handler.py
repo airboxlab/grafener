@@ -70,14 +70,14 @@ def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[s
     )
 
 
-def _fetch(source: str) -> DataFrame:
+def _fetch(source: Source) -> DataFrame:
     """calls appropriate fetcher, based on source type"""
-    src = Source.of(source)
-    refresh_needed = source not in data_cache or data_cache[source].timestamp < src.source_timestamp()
+    path = source.source_path
+    refresh_needed = source not in data_cache or data_cache[path].timestamp < source.source_timestamp()
     if refresh_needed:
-        csv_data = src.read_source()
-        data_cache[source] = DataFrameCacheValue(int(datetime.now().timestamp()), csv_data)
-    return data_cache[source].data_frame
+        csv_data = source.read_source()
+        data_cache[path] = DataFrameCacheValue(int(datetime.now().timestamp()), csv_data)
+    return data_cache[path].data_frame
 
 
 def _prefix_target_xp(c: str, experiment: Optional[str]) -> str:
@@ -85,13 +85,13 @@ def _prefix_target_xp(c: str, experiment: Optional[str]) -> str:
     return experiment + " -- " + c if experiment else c
 
 
-def get_metrics(source: str,
+def get_metrics(source: Source,
                 search: Optional[str],
                 experiment: Optional[str] = None) -> List[str]:
     """
     computes Grafana metrics from CSV header columns
 
-    :param source:
+    :param source: a metrics source
     :param search: an optional search string passed in request
     :param experiment: an optional experiment ID passed as path parameter during datasource configuration. Used to
                        prefix metric names for deduplication when more than 1 datasource is used in a panel
@@ -104,7 +104,7 @@ def get_metrics(source: str,
             for c in df.columns if c != "Date/Time" and (search or "") in c]
 
 
-def get_data(source: str,
+def get_data(source: Source,
              targets: List[Dict[str, str]],
              response_type: str,
              range_from: str,
@@ -113,7 +113,7 @@ def get_data(source: str,
     """
     implements /query enpoint by querying source DataFrame and returning either a TimeSeriesResponse or a TableResponse
 
-    :param source: source file
+    :param source: a data source
     :param targets: list of targets
     :param response_type: expected response type, either 'timeserie' or 'table'. Assuming same for all targets
     :param range_from: from date expressed in iso8601

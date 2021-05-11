@@ -5,20 +5,17 @@ from datetime import datetime, timedelta
 import pandas as pd
 from pandas import DataFrame
 
-# EnergyPlus date format doesn't include year by default
-PINNED_SIM_YEAR = int(os.getenv("SIM_YEAR", datetime.now().year))
-logging.info("Using pinned simulation year: {}".format(PINNED_SIM_YEAR))
 
-
-def process_csv(df: DataFrame) -> DataFrame:
+def process_csv(df: DataFrame, sim_year: int) -> DataFrame:
     """
     applies necessary transformations to E+ csv output
 
     :param df:
+    :param sim_year:
     :return:
     """
     # make a nice datetime format out of Date/Time column
-    df["Date/Time"] = df["Date/Time"].apply(process_energyplus_datetime)
+    df["Date/Time"] = df["Date/Time"].apply(lambda strd: process_energyplus_datetime(strdate=strd, sim_year=sim_year))
     df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%Y/%m/%d  %H:%M:%S", utc=True)
     df.index = df["Date/Time"]
     # last column has a trailing space
@@ -30,18 +27,19 @@ def process_csv(df: DataFrame) -> DataFrame:
     return df
 
 
-def process_energyplus_datetime(strdate: str) -> str:
+def process_energyplus_datetime(strdate: str, sim_year: int) -> str:
     """
     transforms:
         - EnergyPlus date format '%m/%d %H:%M:%S' to '%Y/%m/%d %H:%M:%S'.
         - midnight expressed as 24:00 into 00:00
 
-    :param strdate:
+    :param strdate: the date to transform
+    :param sim_year: simulation year to apply
     :return:
     """
     if "24:00" in strdate:
         date = strdate.strip().split(" ")[0]
         new_date = datetime.strptime(date, "%m/%d") + timedelta(days=1)
-        return "{:04d}/{:02d}/{:02d}  00:00:00".format(PINNED_SIM_YEAR, new_date.month, new_date.day)
+        return "{:04d}/{:02d}/{:02d}  00:00:00".format(sim_year, new_date.month, new_date.day)
     else:
-        return "{:04d}/{}".format(PINNED_SIM_YEAR, strdate.strip())
+        return "{:04d}/{}".format(sim_year, strdate.strip())

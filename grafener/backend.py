@@ -1,5 +1,7 @@
+import logging
 import os
 import re
+from datetime import datetime
 from typing import Optional
 
 from flask import Flask, jsonify, request, Response
@@ -8,6 +10,7 @@ from werkzeug.exceptions import abort
 
 from grafener.logging_config import init_logging
 from grafener.request_handler import get_metrics, get_data
+from grafener.source import Source
 
 init_logging()
 
@@ -15,36 +18,40 @@ app = Flask(__name__)
 cors = CORS(app)
 
 
-def _check_source():
+def _source() -> Source:
     """
     checks HTTP header source is present and points to an available resource
 
-    :return: parse HTTP header source
+    :return: parsed HTTP headers, transformed into a Source object
     """
-    source: str = request.headers.get("source")
-
-    if not source:
+    source_header = request.headers.get("source")
+    if not source_header:
         abort(Response("HTTP header 'source' not found", 400))
-    if re.match("^http[s]?://", source):
+    if re.match("^http[s]?://", source_header):
         abort(Response("HTTP source not supported", 400))
-    if not source.startswith("s3://"):
-        if not os.path.exists(source):
-            abort(Response("couldn't find source [{}]".format(source), 400))
+    if not source_header.startswith("s3://"):
+        if not os.path.exists(source_header):
+            abort(Response("couldn't find source [{}]".format(source_header), 400))
 
-    return source
+    sim_year = request.headers.get("sim_year")
+    if not sim_year:
+        sim_year = int(os.getenv("SIM_YEAR", datetime.now().year))
+    logging.info("Using pinned simulation year: {}".format(sim_year))
+
+    return Source.of(source_header, int(sim_year))
 
 
 @app.route("/", methods=["GET"])
 @app.route("/<xp>", methods=["GET"])
 def health_check(xp: Optional[str] = None):
-    _check_source()
+    _source()
     return jsonify({"status": "ok"})
 
 
 @app.route("/search", methods=["POST"])
 @app.route("/<xp>/search", methods=["POST"])
 def search(xp: Optional[str] = None):
-    source = _check_source()
+    source = _source()
     searched_target = request.json if request.json else {}
     metrics = get_metrics(source=source, search=searched_target.get("target", None), experiment=xp)
     return jsonify(metrics)
@@ -53,7 +60,7 @@ def search(xp: Optional[str] = None):
 @app.route("/query", methods=["POST"])
 @app.route("/<xp>/query", methods=["POST"])
 def query(xp: Optional[str] = None):
-    source = _check_source()
+    source = _source()
     req = request.get_json()
     raw_resp = [t.serialize() for t in get_data(source=source,
                                                 targets=req["targets"],
