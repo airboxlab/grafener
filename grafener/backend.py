@@ -25,7 +25,7 @@ def _check_source():
 
     if not source:
         abort(Response("HTTP header 'source' not found", 400))
-    if re.match("ĥttp[s]?://", source):
+    if re.match("^http[s]?://", source):
         abort(Response("HTTP source not supported", 400))
     if not source.startswith("s3://"):
         if not os.path.exists(source):
