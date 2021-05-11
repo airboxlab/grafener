@@ -1,15 +1,50 @@
 import copy
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, NamedTuple
 
+from attr import dataclass
 from pandas import DataFrame
 
 from grafener.logging_config import init_logging
 from grafener.source import Source
-from grafener.types import DataFrameCacheValue, TimeSeriesResponse, TableResponse
 
 init_logging()
+
+
+class DataFrameCacheValue(NamedTuple):
+    """Tuple representing a DataFrame cache entry"""
+    timestamp: int
+    data_frame: DataFrame
+
+
+@dataclass(frozen=True)
+class TimeSeriesResponse:
+    """Grafana timeseries response"""
+    target: str
+    datapoints: List[List[Union[int, float]]]
+
+    def serialize(self):
+        return {
+            "target": self.target,
+            "datapoints": self.datapoints
+        }
+
+
+@dataclass(frozen=True)
+class TableResponse:
+    """Grafana table response"""
+    columns: List[Dict[str, str]]
+    rows: List[List[Union[int, float, str]]]
+    type: str = "table"
+
+    def serialize(self):
+        return {
+            "type": self.type,
+            "columns": self.columns,
+            "rows": self.rows
+        }
+
 
 # keep a cache for each source. Source data is invalidated if remote source changes
 # (e.g. file timestamp changes in case)
@@ -20,7 +55,7 @@ def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[st
     """transforms given DataFrame in expected TimeSeries response format"""
     return TimeSeriesResponse(
         target=_prefix_target_xp(target, experiment),
-        datapoints=list(zip(df[target].values.tolist(), [int(t.timestamp()) * 1000 for t in df.index.tolist()])) # noqa
+        datapoints=list(zip(df[target].values.tolist(), [int(t.timestamp()) * 1000 for t in df.index.tolist()]))  # noqa
     )
 
 

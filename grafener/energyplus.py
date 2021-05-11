@@ -23,8 +23,10 @@ def process_csv(df: DataFrame) -> DataFrame:
     df.index = df["Date/Time"]
     # last column has a trailing space
     df.columns = [c.strip() for c in df.columns]
-    # drop NaNs: happens when source contains variables/meters reported at different frequency
-    df = df.dropna()
+    # when source contains variables/meters reported at different frequency, rows contain NaNs
+    # TODO: we only have numerical values but filling with 0.0 isn't always the right choice
+    # example: discrete on/off schedule value reported at lower frequency will have zeros when ones are expected
+    df = df.fillna(0.0)
     return df
 
 
