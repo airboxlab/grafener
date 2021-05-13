@@ -11,10 +11,8 @@ from pandas import DataFrame
 from grafener.energyplus import process_csv
 
 # make boto3 less verbose
-logging.getLogger("boto3").setLevel(logging.ERROR)
-logging.getLogger("botocore").setLevel(logging.ERROR)
-logging.getLogger("s3transfer").setLevel(logging.ERROR)
-logging.getLogger("urllib3").setLevel(logging.ERROR)
+for logger in ["boto3", "botocore", "s3transfer", "urllib3"]:
+    logging.getLogger(logger).setLevel(logging.ERROR)
 
 
 class Source(ABC):
