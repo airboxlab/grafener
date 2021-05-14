@@ -12,12 +12,10 @@ services:
       dockerfile: ./docker/Dockerfile
     ports:
       - 3000:3000
-    environment:
-      - SIM_YEAR=2021 # Pin simulation year to 2021, so all EnergyPlus data will be queryable on 2021 time ranges
     volumes:
       # make ../tests folder available at /tmp/eplus_data.
       # datasources will use the later for source configuration (here /tmp/eplus_data/test_eplusout.csv.gz)
-      - ../tests/:/tmp/eplus_data
+      - ../tests:/tmp/eplus_data
       # make datasource configuration automatic on container startup
       - ./provisioning:/etc/grafana/provisioning/datasources
       # persist all Grafener (Grafana) data across container restarts

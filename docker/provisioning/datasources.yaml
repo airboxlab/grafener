@@ -23,7 +23,10 @@ datasources:
     tlsAuth: false
     tlsAuthWithCACert: false
     httpHeaderName1: "source"
+    httpHeaderName2: "sim_year"
   # <map> json object of data that will be encrypted.
   secureJsonData:
     # path to EnergyPlus eplusout.csv
     httpHeaderValue1: "/tmp/eplus_data/test_eplusout.csv.gz"
+    # pinned simulation year
+    httpHeaderValue2: 2021
