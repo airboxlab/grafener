@@ -21,6 +21,9 @@ class TestBackend(unittest.TestCase):
     app = app
     app.testing = True
 
+    def tearDown(self) -> None:
+        data_cache.clear()
+
     def test_no_source(self):
         with app.test_client() as client:
             rv = client.get("/")
@@ -209,7 +212,7 @@ class TestBackend(unittest.TestCase):
             self.assertTrue(len(data["rows"]) > 0)
             self.assertEqual(3, len(data["rows"][0]))
 
-    @skipUnless(_aws_creds_available(), "AWS creds not available")
+    @skipUnless(_aws_creds_available(), "AWS credentials not available")
     def test_s3_source(self):
         with app.test_client() as client:
             rv = client.post("/search", headers={"source": "s3://foobot-public-images/grafener/test_eplusout.csv.gz"})
