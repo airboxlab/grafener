@@ -1,4 +1,4 @@
-name: Grafener
+name: tests
 
 on: [push]
 
