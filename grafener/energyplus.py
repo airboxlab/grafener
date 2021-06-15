@@ -47,7 +47,11 @@ def process_energyplus_datetime(strdate: str, sim_year: int) -> str:
         new_date = datetime.strptime(date, "%m/%d") + timedelta(days=1)
         return "{:04d}/{:02d}/{:02d}  00:00:00".format(sim_year, new_date.month, new_date.day)
     else:
-        return "{:04d}/{}".format(sim_year, strdate.strip())
+        concat = "{:04d}/{}".format(sim_year, strdate.strip())
+        # manage 'daily' reporting frequency
+        if " " not in concat:
+            concat += "  00:00:00"
+        return concat
 
 
 def is_month_full_name(strdate: str) -> Optional[datetime]:
