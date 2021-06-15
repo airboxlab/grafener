@@ -30,3 +30,11 @@ class TestEnergyPlusDataProcessing(unittest.TestCase):
         self.assertEqual(3, len(df))
         for i in range(1, 4):
             self.assertEqual(np.datetime64('2021-0{}-01T00:00:00.000000000'.format(i)), df.index.values[i - 1])
+
+    def test_daily_reporting_date_processing(self):
+        df = pd.DataFrame.from_dict({"Date/Time": ["01/01", "01/02", "01/03"],
+                                     "Value": np.arange(3)})
+        df = process_csv(df, sim_year=2021)
+        self.assertEqual(3, len(df))
+        for i in range(1, 4):
+            self.assertEqual(np.datetime64('2021-01-0{}T00:00:00.000000000'.format(i)), df.index.values[i - 1])
