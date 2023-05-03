@@ -13,9 +13,9 @@ services:
     ports:
       - 3000:3000
     volumes:
-      # make ../tests folder available at /tmp/eplus_data.
+      # make /tmp/energyplus folder (where eplusout.csv resides) available at /tmp/eplus_data.
       # datasources will use the later for source configuration (here /tmp/eplus_data/test_eplusout.csv.gz)
-      - ../tests:/tmp/eplus_data
+      - /tmp/energyplus:/tmp/eplus_data
       # make datasource configuration automatic on container startup
       - ./provisioning:/etc/grafana/provisioning/datasources
       # persist all Grafener (Grafana) data across container restarts
