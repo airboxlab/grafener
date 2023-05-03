@@ -52,12 +52,11 @@ class TestBackend(unittest.TestCase):
 
     def test_get_metrics_with_search(self):
         with app.test_client() as client:
-            rv = client.post("/search",
-                             data=json.dumps({"target": "FLOOR 4 CORE"}),
-                             headers={
-                                 "source": "tests/test_eplusout.csv.gz",
-                                 "content-type": "application/json"
-                             })
+            rv = client.post(
+                "/search",
+                json={"target": "FLOOR 4 CORE"},
+                headers={"source": "tests/test_eplusout.csv.gz"}
+            )
             json_resp = json.loads(rv.data)
             for m in json_resp:
                 self.assertIn("FLOOR 4 CORE", m)

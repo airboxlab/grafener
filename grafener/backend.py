@@ -52,8 +52,12 @@ def health_check(xp: Optional[str] = None):
 @app.route("/<xp>/search", methods=["POST"])
 def search(xp: Optional[str] = None):
     source = _source()
-    searched_target = request.json if request.json else {}
-    metrics = get_metrics(source=source, search=searched_target.get("target", None), experiment=xp)
+    searched_target = request.json if request.data else {}
+    metrics = get_metrics(
+        source=source,
+        search=searched_target.get("target", None),
+        experiment=xp
+    )
     return jsonify(metrics)
 
 
@@ -62,12 +66,17 @@ def search(xp: Optional[str] = None):
 def query(xp: Optional[str] = None):
     source = _source()
     req = request.get_json()
-    raw_resp = [t.serialize() for t in get_data(source=source,
-                                                targets=req["targets"],
-                                                response_type=req["targets"][0]["type"],
-                                                range_from=req["range"]["from"],
-                                                range_to=req["range"]["to"],
-                                                experiment=xp)]
+    raw_resp = [
+        t.serialize()
+        for t in get_data(
+            source=source,
+            targets=req["targets"],
+            response_type=req["targets"][0]["type"],
+            range_from=req["range"]["from"],
+            range_to=req["range"]["to"],
+            experiment=xp
+        )
+    ]
     return jsonify(raw_resp)
 
 
