@@ -4,3 +4,4 @@ pandas~=2.0.1
 boto3~=1.13
 Werkzeug~=2.2.2
 attrs~=22.1.0
+pyarrow~=9.0.0
