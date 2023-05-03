@@ -23,7 +23,8 @@ class Source(ABC):
         self.sim_year = sim_year
 
     def read_source(self) -> DataFrame:
-        return process_csv(pd.read_csv(self.load()), sim_year=self.sim_year)
+        df = pd.read_csv(self.load(), dtype_backend="pyarrow", engine="pyarrow")
+        return process_csv(df, sim_year=self.sim_year)
 
     @staticmethod
     def of(source_path: str, sim_year: int):
