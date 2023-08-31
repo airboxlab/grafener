@@ -1,7 +1,9 @@
 import copy
 import logging
+import os
 from datetime import datetime
-from typing import Dict, List, Optional, Union, NamedTuple
+from functools import lru_cache
+from typing import Dict, List, Optional, Union
 
 from attr import dataclass
 from pandas import DataFrame
@@ -11,11 +13,7 @@ from grafener.source import Source
 
 init_logging()
 
-
-class DataFrameCacheValue(NamedTuple):
-    """Tuple representing a DataFrame cache entry"""
-    timestamp: int
-    data_frame: DataFrame
+MAX_CACHE_SIZE = int(os.getenv("MAX_CACHE_SIZE", 1))
 
 
 @dataclass(frozen=True)
@@ -46,11 +44,6 @@ class TableResponse:
         }
 
 
-# keep a cache for each source. Source data is invalidated if remote source changes
-# (e.g. file timestamp changes in case)
-data_cache: Dict[str, DataFrameCacheValue] = {}
-
-
 def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[str]) -> TimeSeriesResponse:
     """transforms given DataFrame in expected TimeSeries response format"""
     return TimeSeriesResponse(
@@ -70,14 +63,10 @@ def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[s
     )
 
 
+@lru_cache(maxsize=MAX_CACHE_SIZE)
 def _fetch(source: Source) -> DataFrame:
     """calls appropriate fetcher, based on source type"""
-    path = source.source_path
-    source_ts = source.source_timestamp()
-    refresh_needed = path not in data_cache or data_cache[path].timestamp < source_ts
-    if refresh_needed:
-        data_cache[path] = DataFrameCacheValue(source_ts, source.read_source())
-    return data_cache[path].data_frame
+    return source.read_source()
 
 
 def _prefix_target_xp(c: str, experiment: Optional[str]) -> str:

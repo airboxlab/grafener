@@ -4,7 +4,8 @@ import unittest
 from unittest import skipUnless
 
 from grafener.backend import app
-from grafener.request_handler import data_cache
+from grafener.request_handler import _fetch  # noqa
+from grafener.source import LocalFilesystemSource
 
 
 def _aws_creds_available():
@@ -20,9 +21,6 @@ def _aws_creds_available():
 class TestBackend(unittest.TestCase):
     app = app
     app.testing = True
-
-    def tearDown(self) -> None:
-        data_cache.clear()
 
     def test_no_source(self):
         with app.test_client() as client:
@@ -74,13 +72,21 @@ class TestBackend(unittest.TestCase):
                 self.assertIn("xp1 -- FLOOR 4 CORE", m)
 
     def test_data_cache(self):
-        with app.test_client() as client:
-            self.assertEqual(0, len(data_cache))
-            client.post("/search", headers={"source": "tests/test_eplusout.csv.gz"})
-            self.assertEqual(1, len(data_cache))
-            cached_value = list(data_cache.values())[0]
-            self.assertTrue(cached_value.timestamp > 0)
-            self.assertTrue(len(cached_value.data_frame) > 0)
+
+        source = LocalFilesystemSource("tests/test_eplusout.csv.gz", 2023)
+
+        self.assertEqual(1, _fetch.cache_info().maxsize)
+        self.assertEqual(0, _fetch.cache_info().currsize)
+
+        _fetch(source=source)
+        self.assertEqual(1, _fetch.cache_info().currsize)
+        self.assertEqual(1, _fetch.cache_info().misses)
+        self.assertEqual(0, _fetch.cache_info().hits)
+
+        _fetch(source=source)
+        self.assertEqual(1, _fetch.cache_info().currsize)
+        self.assertEqual(1, _fetch.cache_info().misses)
+        self.assertEqual(1, _fetch.cache_info().hits)
 
     def test_timeseries_query(self):
         with app.test_client() as client:
