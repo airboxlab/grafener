@@ -1,5 +1,3 @@
-import logging
-import os
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -8,8 +6,7 @@ from pandas import DataFrame
 
 
 def process_csv(df: DataFrame, sim_year: int) -> DataFrame:
-    """
-    applies necessary transformations to E+ csv output
+    """Applies necessary transformations to E+ csv output.
 
     :param df:
     :param sim_year:
@@ -18,7 +15,8 @@ def process_csv(df: DataFrame, sim_year: int) -> DataFrame:
     # make a nice datetime format out of Date/Time column
     output = df.copy()
     output["Date/Time"] = output["Date/Time"].apply(
-        lambda strd: process_energyplus_datetime(strdate=strd, sim_year=sim_year))
+        lambda strd: process_energyplus_datetime(strdate=strd, sim_year=sim_year)
+    )
     output["Date/Time"] = pd.to_datetime(output["Date/Time"], format="%Y/%m/%d  %H:%M:%S", utc=True)
     output.index = output["Date/Time"]
     # last column has a trailing space
@@ -41,13 +39,13 @@ def process_energyplus_datetime(strdate: str, sim_year: int) -> str:
     :return:
     """
     if month := is_month_full_name(strdate):
-        return "{:04d}/{:02d}/{:02d}  00:00:00".format(sim_year, month.month, 1)
+        return f"{sim_year:04d}/{month.month:02d}/{1:02d}  00:00:00"
     elif "24:00" in strdate:
         date = strdate.strip().split(" ")[0]
         new_date = datetime.strptime(date, "%m/%d") + timedelta(days=1)
-        return "{:04d}/{:02d}/{:02d}  00:00:00".format(sim_year, new_date.month, new_date.day)
+        return f"{sim_year:04d}/{new_date.month:02d}/{new_date.day:02d}  00:00:00"
     else:
-        concat = "{:04d}/{}".format(sim_year, strdate.strip())
+        concat = f"{sim_year:04d}/{strdate.strip()}"
         # manage 'daily' reporting frequency
         if " " not in concat:
             concat += "  00:00:00"
@@ -56,6 +54,6 @@ def process_energyplus_datetime(strdate: str, sim_year: int) -> str:
 
 def is_month_full_name(strdate: str) -> Optional[datetime]:
     try:
-        return datetime.strptime(strdate, '%B')
+        return datetime.strptime(strdate, "%B")
     except ValueError:
         return None
