@@ -9,6 +9,7 @@ from grafener.source import LocalFilesystemSource
 
 
 def _aws_creds_available():
+    """Check if AWS credentials are available."""
     import boto3
 
     sts = boto3.client("sts")
