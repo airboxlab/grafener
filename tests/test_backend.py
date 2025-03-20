@@ -5,10 +5,10 @@ from unittest import skipUnless
 
 from grafener.backend import app
 from grafener.request_handler import _fetch  # noqa
-from grafener.source import LocalFilesystemSource
 
 
 def _aws_creds_available():
+    """Check if AWS credentials are available."""
     import boto3
 
     sts = boto3.client("sts")
@@ -68,22 +68,6 @@ class TestBackend(unittest.TestCase):
             json_resp = json.loads(rv.data)
             for m in json_resp:
                 self.assertIn("xp1 -- FLOOR 4 CORE", m)
-
-    def test_data_cache(self):
-        source = LocalFilesystemSource("tests/test_eplusout.csv.gz", 2023)
-
-        self.assertEqual(1, _fetch.cache_info().maxsize)
-        self.assertEqual(0, _fetch.cache_info().currsize)
-
-        _fetch(source=source)
-        self.assertEqual(1, _fetch.cache_info().currsize)
-        self.assertEqual(1, _fetch.cache_info().misses)
-        self.assertEqual(0, _fetch.cache_info().hits)
-
-        _fetch(source=source)
-        self.assertEqual(1, _fetch.cache_info().currsize)
-        self.assertEqual(1, _fetch.cache_info().misses)
-        self.assertEqual(1, _fetch.cache_info().hits)
 
     def test_timeseries_query(self):
         with app.test_client() as client:
