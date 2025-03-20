@@ -1,12 +1,13 @@
 # GrafEner
 
-Python version: 3.10+
-
 ![badge](https://github.com/airboxlab/grafener/actions/workflows/test.yml/badge.svg)
 
 Plotting EnergyPlus data made easy
 
 ## Setup
+
+Supported Python version: 3.10+.
+Tested with Grafana 7 to 11.
 
 ### Using docker
 
