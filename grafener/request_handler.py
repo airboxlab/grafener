@@ -1,9 +1,6 @@
 import copy
 import logging
-import os
 from datetime import datetime
-from functools import lru_cache
-from typing import Dict, List, Optional, Union
 
 from attr import dataclass
 from pandas import DataFrame
@@ -13,16 +10,13 @@ from grafener.source import Source
 
 init_logging()
 
-# max number of cached DataFrames
-MAX_CACHE_SIZE = int(os.getenv("MAX_CACHE_SIZE", 1))
-
 
 @dataclass(frozen=True)
 class TimeSeriesResponse:
     """Grafana timeseries response."""
 
     target: str
-    datapoints: List[List[Union[int, float]]]
+    datapoints: list[list[int | float]]
 
     def serialize(self):
         return {"target": self.target, "datapoints": self.datapoints}
@@ -32,15 +26,15 @@ class TimeSeriesResponse:
 class TableResponse:
     """Grafana table response."""
 
-    columns: List[Dict[str, str]]
-    rows: List[List[Union[int, float, str]]]
+    columns: list[dict[str, str]]
+    rows: list[list[int | float | str]]
     type: str = "table"
 
     def serialize(self):
         return {"type": self.type, "columns": self.columns, "rows": self.rows}
 
 
-def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[str]) -> TimeSeriesResponse:
+def _to_time_series_response(target: str, df: DataFrame, experiment: str | None) -> TimeSeriesResponse:
     """Transforms given DataFrame in expected TimeSeries response format."""
     return TimeSeriesResponse(
         target=_prefix_target_xp(target, experiment),
@@ -50,7 +44,7 @@ def _to_time_series_response(target: str, df: DataFrame, experiment: Optional[st
     )
 
 
-def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[str]) -> TableResponse:
+def _to_table_response(targets: list[str], df: DataFrame, experiment: str | None) -> TableResponse:
     """Transforms given DataFrame in expected Table response format."""
     return TableResponse(
         columns=[{"text": "Time", "type": "time"}]
@@ -62,18 +56,17 @@ def _to_table_response(targets: List[str], df: DataFrame, experiment: Optional[s
     )
 
 
-@lru_cache(maxsize=MAX_CACHE_SIZE)
-def _fetch(source: Source) -> DataFrame:
+def _fetch(source: Source, header_only: bool, use_cols: list[str] | None) -> DataFrame:
     """Calls appropriate fetcher, based on source type."""
-    return source.read_source()
+    return source.read_source(header_only, use_cols)
 
 
-def _prefix_target_xp(c: str, experiment: Optional[str]) -> str:
+def _prefix_target_xp(c: str, experiment: str | None) -> str:
     """If experiment is provided, add it as a prefix to given name."""
     return experiment + " -- " + c if experiment else c
 
 
-def get_metrics(source: Source, search: Optional[str], experiment: Optional[str] = None) -> List[str]:
+def get_metrics(source: Source, search: str | None, experiment: str | None = None) -> list[str]:
     """Computes Grafana metrics from CSV header columns.
 
     :param source: a metrics source
@@ -83,19 +76,19 @@ def get_metrics(source: Source, search: Optional[str], experiment: Optional[str]
     :return: list of queryable metrics
     """
     logging.info(f"metric search - xp: {experiment} source: {source} target: {search}")
-    df = _fetch(source)
+    df = _fetch(source, header_only=True, use_cols=None)
 
     return [_prefix_target_xp(c, experiment) for c in df.columns if c != "Date/Time" and (search or "") in c]
 
 
 def get_data(
     source: Source,
-    targets: List[Dict[str, str]],
+    targets: list[dict[str, str]],
     response_type: str,
     range_from: str,
     range_to: str,
-    experiment: Optional[str] = None,
-) -> List[Union[TimeSeriesResponse, TableResponse]]:
+    experiment: str | None = None,
+) -> list[TimeSeriesResponse | TableResponse]:
     """Implements /query enpoint by querying source DataFrame and returning either a
     TimeSeriesResponse or a TableResponse.
 
@@ -108,13 +101,20 @@ def get_data(
                        targets have it as a name prefix
     :return:
     """
-    df = _fetch(source)
-
     # remove experiment ID prefix from targets
     xp_free_targets = copy.deepcopy(targets)
     if experiment:
         for t in xp_free_targets:
             t["target"] = t["target"].replace(experiment + " -- ", "")
+
+    # fetch data
+    use_cols = list({t["target"] for t in xp_free_targets})
+    # reintroduce extra space for last column, if it was requested
+    available_cols = _fetch(source, header_only=True, use_cols=None)
+    if available_cols.columns[-1] in use_cols:
+        use_cols.append(available_cols.columns[-1] + " ")
+        use_cols.remove(available_cols.columns[-1])
+    df = _fetch(source, header_only=False, use_cols=use_cols)
 
     # filter data with specified time range
     range_from_dt = datetime.fromisoformat(range_from.replace("Z", "+00:00"))
@@ -123,11 +123,14 @@ def get_data(
 
     # process each target and transform to requested response type
     if response_type == "timeserie":
-        return [
+        resp = [
             _to_time_series_response(target_definition["target"], df, experiment)
             for target_definition in xp_free_targets
         ]
     elif response_type == "table":
-        return [_to_table_response([t["target"] for t in xp_free_targets], df, experiment)]
+        resp = [_to_table_response([t["target"] for t in xp_free_targets], df, experiment)]
     else:
         raise ValueError(f"unsupported response type {response_type}")
+
+    del df
+    return resp
