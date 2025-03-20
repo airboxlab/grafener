@@ -1,7 +1,8 @@
-flask~=3.0.0
-flask-cors~=3.0.10
+flask~=2.3.2
+flask-cors~=4.0.2
 pandas~=2.0.1
-boto3~=1.13
+boto3~=1.28.85
 Werkzeug~=3.0.1
-attrs~=22.1.0
+attrs~=23.1.0
 pyarrow~=14.0.1
+numpy==1.26.4
