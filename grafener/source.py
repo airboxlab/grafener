@@ -16,19 +16,35 @@ for logger in ["boto3", "botocore", "s3transfer", "urllib3"]:
 
 
 class Source(ABC):
-    """an abstract source"""
+    """An abstract source."""
 
     def __init__(self, source_path: str, sim_year: int):
         self.source_path = source_path
         self.sim_year = sim_year
 
-    def read_source(self) -> DataFrame:
-        df = pd.read_csv(self.load(), dtype_backend="pyarrow", engine="pyarrow")
-        return process_csv(df, sim_year=self.sim_year)
+    def read_source(self, header_only: bool, use_cols: list[str] | None) -> DataFrame:
+        """Read source and apply necessary transformations.
+
+        :param header_only: read only the header, useful to get column names
+        :param use_cols: columns to read. Must be provided if header_only is False
+        """
+
+        if header_only:
+            # read only the header
+            cols_df = pd.read_csv(self.load(), nrows=0)
+            cols_df.columns = [col.strip() for col in cols_df.columns]
+            return cols_df
+        else:
+            assert use_cols, "use_cols must be provided"
+            # make sure Date/Time is always present, as it's used as index
+            if "Date/Time" not in use_cols:
+                use_cols.append("Date/Time")
+            # read and process the whole file
+            return process_csv(pd.read_csv(self.load(), usecols=use_cols), sim_year=self.sim_year)
 
     @staticmethod
     def of(source_path: str, sim_year: int):
-        """build a source from given path"""
+        """Build a source from given path."""
         if source_path.startswith("s3://"):
             return S3Source(source_path, sim_year)
         else:
@@ -43,8 +59,7 @@ class Source(ABC):
 
     @abstractmethod
     def load(self) -> str:
-        """
-        load source and store it on local filesystem
+        """Load source and store it on local filesystem.
 
         :return: path to locally loaded file
         """
@@ -52,7 +67,7 @@ class Source(ABC):
 
 
 class LocalFilesystemSource(Source):
-    """a source from local file"""
+    """A source from local file."""
 
     def __init__(self, source_path: str, sim_year: int):
         super().__init__(source_path, sim_year)
@@ -65,8 +80,7 @@ class LocalFilesystemSource(Source):
 
 
 class S3Source(Source):
-    """
-    A source build from a S3 object
+    """A source build from a S3 object.
 
     To use it against a private source, make sure that either:
     - AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_DEFAULT_REGION env vars are set
