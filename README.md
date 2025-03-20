@@ -1,5 +1,7 @@
 # GrafEner
 
+Python version: 3.10+
+
 ![badge](https://github.com/airboxlab/grafener/actions/workflows/test.yml/badge.svg)
 
 Plotting EnergyPlus data made easy
@@ -23,8 +25,9 @@ docker-compose -f ./docker/docker-compose.yml build grafener
 ```
 
 Docker compose configuration provided here brings several benefits:
+
 - GrafEner configuration is persisted (not lost when container is stopped)
-- docker configuration is centralized in a file (see `docker/docker-compose.yml`)  
+- docker configuration is centralized in a file (see `docker/docker-compose.yml`)
 - datasources are automatically provisioned (see `docker/provisioning` to configure yours)
 
 ## Run
@@ -59,7 +62,7 @@ docker-compose -f ./docker/docker-compose.yml up
 
 **Run an EnergyPlus experiment using CSV output.**
 
-Example: 
+Example:
 
 ```shell
 energyplus -r -x -d /tmp/energyplus -w /path/to/weather.epw /path/to/model.idf
@@ -72,15 +75,16 @@ Open your browser at http://localhost:3000 to configure your first datasource (n
 Example: ![datasource configuration](images/ds_config.png?raw=true "Datasource configuration")
 
 Notes:
+
 - URL must be `http://localhost:8900`
-- Add a `source` HTTP header that will point to `eplusout.csv` file. In present example, it will be at 
+- Add a `source` HTTP header that will point to `eplusout.csv` file. In present example, it will be at
   `/tmp/eplus_data/eplusout.csv`
-- optionally, you can add a `sim_year` header with the simulation year you want to set for this data source. It will 
+- optionally, you can add a `sim_year` header with the simulation year you want to set for this data source. It will
   override `SIM_YEAR` environment variable.
 
 **Enjoy!**
 
-Create a new dashboard, add a panel and start browsing EnergyPlus data. All CSV columns are now Grafana metrics 
+Create a new dashboard, add a panel and start browsing EnergyPlus data. All CSV columns are now Grafana metrics
 
 ![transform](images/transform.png?raw=true "Transformation")
 
@@ -97,12 +101,12 @@ Using a friendly but unique identifer in URL path. For instance, if you have 2 s
 
 **Use -- Mixed -- datasource type**
 
-In a new panel, use the *-- Mixed --* datasource type, then start adding metrics: Grafana will ask you to provide the 
+In a new panel, use the *-- Mixed --* datasource type, then start adding metrics: Grafana will ask you to provide the
 datasource first, so you can choose between myXp1 and myXp2
 
 **Visualize and compare**
 
-In this mode, metric names have their respective datasource name as a prefix. It allows to identify them, and apply 
+In this mode, metric names have their respective datasource name as a prefix. It allows to identify them, and apply
 post-processing (like _series overriding_)
 
 Example:
@@ -114,6 +118,7 @@ Example:
 `source` HTTP header can point to a S3 object identified by its URI. Example: `s3://my-bucket/path/to/eplusout.csv[.gz]`
 
 To access your bucket content, make sure that either:
+
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_DEFAULT_REGION` environment variables are set
 - or this process is running on an AWS EC2/ECS instance with appropriate S3 permissions (e.g. IAM instance role)
 
