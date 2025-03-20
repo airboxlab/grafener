@@ -13,6 +13,10 @@ class TestEnergyPlusDataProcessing(unittest.TestCase):
         )
         df_2020 = process_csv(df, sim_year=2020)
         self.assertEqual(np.datetime64("2020-01-01T00:15:00.000000000"), df_2020.index.values[0])
+
+        df = pd.DataFrame.from_dict(
+            {"Date/Time": [" 01/01  00:15:00", " 01/01  00:30:00", " 01/01  00:45:00"], "Value": np.arange(3)}
+        )
         df_2021 = process_csv(df, sim_year=2021)
         self.assertEqual(np.datetime64("2021-01-01T00:15:00.000000000"), df_2021.index.values[0])
 
